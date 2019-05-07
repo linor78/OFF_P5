@@ -53,17 +53,30 @@ def init_database():
         except mysql.connector.Error as err:
             pass;
     mydb.commit()
+    return mydb
 
 def choose_action():
     choice = 0
     while choice != '1' and choice != '2' :
         os.system('clear')
-        print('\n1-Quel aliment souhaitez-vous remplacer?\n')
-        print('2-Retrouver mes aliments substitués.\n')
+        print('\n      1-Quel aliment souhaitez-vous remplacer?\n')
+        print('      2-Retrouver mes aliments substitués.\n')
         choice = input('Veuiller rentrer le numero correspondant à votre action:\n')
     return choice
+def choose_category(dbcursor):
+    category = 0
+    dbcursor.execute("select * from categories order by id")
+    categories = {str(a):b for (a,b) in dbcursor}
+    while category not in categories.keys():
+        os.system('clear')
+        for key in categories.keys():
+            print('     {} - {}\n'.format(key,categories[key]))
+        category = input('Veuillez choisir une categorie\n')
+    return int(category)
 def main():
-    init_database()
+    mydb = init_database()
+    dbcursor = mydb.cursor()
     choice = choose_action()
+    choose_category(dbcursor)
 if __name__ == '__main__':
     main()
