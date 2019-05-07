@@ -4,7 +4,7 @@
 import mysql.connector
 from mysql.connector import errorcode
 import private as p
-
+import os
 TABLES = {}
 TABLES['off'] = (
     "CREATE TABLE IF NOT EXISTS off ("
@@ -53,10 +53,17 @@ def init_database():
         except mysql.connector.Error as err:
             pass;
     mydb.commit()
-    dbcursor.close()
-    mydb.close()
+
+def choose_action():
+    choice = 0
+    while choice != '1' and choice != '2' :
+        os.system('clear')
+        print('\n1-Quel aliment souhaitez-vous remplacer?\n')
+        print('2-Retrouver mes aliments substitués.\n')
+        choice = input('Veuiller rentrer le numero correspondant à votre action:\n')
+    return choice
 def main():
     init_database()
-
+    choice = choose_action()
 if __name__ == '__main__':
     main()
