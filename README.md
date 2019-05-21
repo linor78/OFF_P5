@@ -16,3 +16,5 @@ The program need a function named 'return_values(category,jsond)'' that will tak
 The program need a function 'get_all_pages(cursor, category, list_of_products)' that will ask the OFF Api for every page of food from the category chosen by the user as json files.Get the database cursor ,the category chosen by the user and the list_of_products as arguments, For each product who contain both 'stores' and 'nutrition_grade_fr' values, add the product to the list of products.
 
 The program need a function 'insert_products_into_off(mydb,products)' that will insert the products into the 'off' table of the database, it will ignore any error due to duplicates during insertion.
+
+The program need a function 'choose_product(mydb,category)' that will get 10 products of the category and ask the user to choose one, it will ask until one is choosen
