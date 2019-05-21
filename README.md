@@ -11,4 +11,6 @@ The program need a function 'choose_category()' that will show the user the cate
 
 The programe need a class named list_of_products() that will contain the list of the products the program will get from the OpenFoodFacts's API and will also contain the function needed to add a product, get the lenght of the list, reset the list and get the string representation of the products to insert in the database.
 
+The program need a function named return_values(category,jsond) that will take only the columns we need from each json product into a list  and return it
+
 The program need a function 'get_all_pages(cursor, category, list_of_products)' that will ask the OFF Api for every page of food from the category chosen by the user as json files.Get the database cursor ,the category chosen by the user and the list_of_products as arguments, For each product who contain both 'stores' and 'nutrition_grade_fr' values, add the product to the list of products.

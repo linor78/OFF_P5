@@ -5,6 +5,9 @@ import mysql.connector
 from mysql.connector import errorcode
 import private as p
 import os
+import requests
+S1_URL = 'https://fr.openfoodfacts.org/cgi/search.pl?&tagtype_0=languages&tag_contains_0=contains&tag_0=fr&tagtype_1=categories&tag_contains_1=contains&tag_1='
+S2_URL = "&search_simple=1&action=process&page_size=1000&json=1&page="
 TABLES = {}
 TABLES['off'] = (
     "CREATE TABLE IF NOT EXISTS off ("
@@ -32,6 +35,21 @@ TABLES['categories'] = (
     "Name VARCHAR(15) NOT NULL UNIQUE"
     ")ENGINE=InnoDB")
 CATEGORIES = ('Lait', 'Beurre', 'Farine', 'Sodas', 'Pain')
+
+class list_of_products():
+    def __init__(self):
+        self.products = list()
+
+    def add_product(self,tuple_of_values):
+        self.products.append(tuple_of_values)
+    def get_all_products(self):
+        s=', '
+        return s.join((str(p) for p in self.products)).replace('[','(').replace(']',')')
+    def get_len(self):
+        return len(self.products)
+    def reset_list():
+        self.products[:] = []
+
 def init_database():
     #the function try to connect to the mysql server
     try :
@@ -73,10 +91,54 @@ def choose_category(dbcursor):
             print('     {} - {}\n'.format(key,categories[key]))
         category = input('Veuillez choisir une categorie\n')
     return int(category)
+
+def return_values(category,jsond):
+
+    values = list()
+    value = None
+    for key in COLUMNS.keys():
+        try:
+            value = jsond[COLUMNS[key]]
+            if key == 'EAN':
+                value = int(value)
+                values.append(value)
+            else :
+                values.append(value)
+        except:
+            pass
+    values.append(category)
+    #print(values)
+    return values
+
+def get_all_pages(cursor,category,list_of_products):
+    i = 1
+    cursor.execute('SELECT Name FROM categories WHERE id like {}'.format(category))
+    for item in cursor:
+        cat_name = item[0]
+    while True:
+        #url = B_URL + cat_name + '/' + str(i) +'.json'
+        url = S1_URL + cat_name + S2_URL + str(i)
+        print(url)
+        r = requests.get(url)
+        jsond = r.json()
+        jsond = jsond['products']
+        if  not jsond:
+            break
+        for product in jsond:
+            try:
+                if product['stores'] and product['nutrition_grade_fr']:
+                    list_of_products.add_product(return_values(category,product))
+            except:
+                pass
+        i += 1
+
 def main():
     mydb = init_database()
+    products = list_of_products()
     dbcursor = mydb.cursor()
     choice = choose_action()
-    choose_category(dbcursor)
+    category = choose_category(dbcursor)
+    get_all_pages(dbcursor,category,products)
+    print(products.products)
 if __name__ == '__main__':
     main()
