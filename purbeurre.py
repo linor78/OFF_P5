@@ -9,6 +9,7 @@ import requests
 COLUMNS = {'EAN': 'code', 'Name': 'product_name', 'Stores' : 'stores', 'URL': 'url', 'Grade': 'nutrition_grade_fr'}
 S1_URL = 'https://fr.openfoodfacts.org/cgi/search.pl?&tagtype_0=languages&tag_contains_0=contains&tag_0=fr&tagtype_1=categories&tag_contains_1=contains&tag_1='
 S2_URL = "&search_simple=1&action=process&page_size=1000&json=1&page="
+INS_COLUMNS = ('Ean', 'Name', 'Stores', 'URL', 'Grade', 'Category')
 TABLES = {}
 TABLES['off'] = (
     "CREATE TABLE IF NOT EXISTS off ("
@@ -107,7 +108,6 @@ def return_values(category,jsond):
         except:
             pass
     values.append(category)
-    print(values)
     return values
 
 def get_all_pages(cursor,category,list_of_products):
@@ -132,6 +132,31 @@ def get_all_pages(cursor,category,list_of_products):
                 pass
         i += 1
 
+def insert_products_into_off(mydb,products):
+    s= ', '
+    cursor = mydb.cursor()
+    query = 'INSERT IGNORE into off ({}) VALUES {} ;'.format(s.join(INS_COLUMNS), products.get_all_products())
+    try:
+        cursor.execute(query)
+    except mysql.connector.Error as err:
+        print("Something went wrong: {}".format(err))
+    mydb.commit()
+
+def choose_product(mydb,category):
+    cursor = mydb.cursor()
+    choice = 0
+    index = ['1','2','3','4','5','6','7','8','9','10']
+    query = 'select * from off where Category=' + str(category) + ' order by rand() limit 10;'
+    cursor.execute(query)
+    eans = [a for a in cursor]
+    #index = range(1,len(eans))
+    menu_index = dict(zip(index,eans))
+    while choice not in menu_index.keys():
+        for index in menu_index.keys():
+            print('\n{} - {}'.format(index,menu_index[index]))
+        choice = input('Veuiller selectionner le produit à substitué\n')
+    return menu_index[choice][0]
+
 def main():
     mydb = init_database()
     products = list_of_products()
@@ -139,6 +164,8 @@ def main():
     choice = choose_action()
     category = choose_category(dbcursor)
     get_all_pages(dbcursor,category,products)
-    print(products.get_all_products())
+    insert_products_into_off(mydb,products)
+    ean = choose_product(mydb,category)
+    print(ean)
 if __name__ == '__main__':
     main()
