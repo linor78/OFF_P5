@@ -6,6 +6,7 @@ from mysql.connector import errorcode
 import private as p
 import os
 import requests
+COLUMNS = {'EAN': 'code', 'Name': 'product_name', 'Stores' : 'stores', 'URL': 'url', 'Grade': 'nutrition_grade_fr'}
 S1_URL = 'https://fr.openfoodfacts.org/cgi/search.pl?&tagtype_0=languages&tag_contains_0=contains&tag_0=fr&tagtype_1=categories&tag_contains_1=contains&tag_1='
 S2_URL = "&search_simple=1&action=process&page_size=1000&json=1&page="
 TABLES = {}
@@ -34,12 +35,11 @@ TABLES['categories'] = (
     "id SMALLINT PRIMARY KEY AUTO_INCREMENT,"
     "Name VARCHAR(15) NOT NULL UNIQUE"
     ")ENGINE=InnoDB")
-CATEGORIES = ('Lait', 'Beurre', 'Farine', 'Sodas', 'Pain')
+CATEGORIES = ('Laits', 'Beurres', 'Farines', 'Sodas', 'Pains')
 
 class list_of_products():
     def __init__(self):
         self.products = list()
-
     def add_product(self,tuple_of_values):
         self.products.append(tuple_of_values)
     def get_all_products(self):
@@ -67,7 +67,7 @@ def init_database():
     #    cmd = 'INSERT INTO categories(Name) VALUES (\'' + item + '\')'
     #    print(cmd)
         try:
-            dbcursor.execute('INSERT INTO categories(Name) VALUES (\'' + item + '\')')
+            dbcursor.execute('INSERT IGNORE INTO categories(Name) VALUES (\'' + item + '\')')
         except mysql.connector.Error as err:
             pass;
     mydb.commit()
@@ -107,7 +107,7 @@ def return_values(category,jsond):
         except:
             pass
     values.append(category)
-    #print(values)
+    print(values)
     return values
 
 def get_all_pages(cursor,category,list_of_products):
@@ -139,6 +139,6 @@ def main():
     choice = choose_action()
     category = choose_category(dbcursor)
     get_all_pages(dbcursor,category,products)
-    print(products.products)
+    print(products.get_all_products())
 if __name__ == '__main__':
     main()
