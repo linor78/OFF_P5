@@ -14,7 +14,7 @@ TABLES = {}
 TABLES['off'] = (
     "CREATE TABLE IF NOT EXISTS off ("
     "EAN BIGINT PRIMARY KEY NOT NULL,"
-    "Name VARCHAR(30) NOT NULL,"
+    "Name VARCHAR(150) NOT NULL,"
     "Category SMALLINT,"
     "Stores VARCHAR(150),"
     "Grade CHAR(1) NOT NULL,"
@@ -61,12 +61,11 @@ def init_database():
             print("Something is wrong with your user name or password")
             exit(1)
     dbcursor = mydb.cursor()
+    #dbcursor.execute('drop table mysubstituts,off,categories;')
     dbcursor.execute(TABLES['categories'])
     dbcursor.execute(TABLES['off'])
     dbcursor.execute(TABLES['mysubstituts'])
     for item in CATEGORIES:
-    #    cmd = 'INSERT INTO categories(Name) VALUES (\'' + item + '\')'
-    #    print(cmd)
         try:
             dbcursor.execute('INSERT IGNORE INTO categories(Name) VALUES (\'' + item + '\')')
         except mysql.connector.Error as err:
@@ -146,16 +145,23 @@ def choose_product(mydb,category):
     cursor = mydb.cursor()
     choice = 0
     index = ['1','2','3','4','5','6','7','8','9','10']
-    query = 'select * from off where Category=' + str(category) + ' order by rand() limit 10;'
+    query = 'select EAN,Name,URL from off where Category=' + str(category) + ' order by rand() limit 10;'
     cursor.execute(query)
     eans = [a for a in cursor]
     #index = range(1,len(eans))
     menu_index = dict(zip(index,eans))
     while choice not in menu_index.keys():
         for index in menu_index.keys():
-            print('\n{} - {}'.format(index,menu_index[index]))
+            print('\n{} - {}'.format(index,menu_index[index]).replace('(','').replace(')','').replace(', ','    -    ').replace('\'','').replace('\"',''))
         choice = input('Veuiller selectionner le produit à substitué\n')
     return menu_index[choice][0]
+
+def choose_sub(mydb,category,product_ean):
+    cursor = mydb.cursor()
+    query = 'select EAN from off where EAN!=' + str(product_ean) + ' and Grade>=(select Grade from off where EAN=' + str(product_ean) + ') order by rand() limit 1;'
+    cursor.execute(query)
+    ean = [a for a in cursor]
+    return ean[0][0]
 
 def main():
     mydb = init_database()
@@ -165,7 +171,9 @@ def main():
     category = choose_category(dbcursor)
     get_all_pages(dbcursor,category,products)
     insert_products_into_off(mydb,products)
-    ean = choose_product(mydb,category)
-    print(ean)
+    product_ean = choose_product(mydb,category)
+    sub_ean = choose_sub(mydb,category,product_ean)
+    print(product_ean)
+    print(sub_ean)
 if __name__ == '__main__':
     main()
