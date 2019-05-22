@@ -20,3 +20,7 @@ The program need a function 'insert_products_into_off(mydb,products)' that will 
 The program need a function 'choose_product(mydb,category)' that will get 10 products of the category and ask the user to choose one, it will ask until one is choosen.it will return the ean of the chosen product.
 
 The program need a 'function choose_sub(mydb,category,product_ean)' that will choose randomly a product of the same category that isn't the chosen product, with a nutrition grade equal or better. It will the return the randomly chosen product's EAN.
+
+The program need a function 'insert_into_mysubstituts(mydb, product_ean, sub_ean)' that will insert into the 'mysubstituts' table of the database both the chosen product and the substitut.
+
+The program need a function 'print_product_from_EAN(mydb,EAN)' that will print the information of the product in the console.
