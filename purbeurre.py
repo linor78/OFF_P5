@@ -151,6 +151,7 @@ def choose_product(mydb,category):
     #index = range(1,len(eans))
     menu_index = dict(zip(index,eans))
     while choice not in menu_index.keys():
+        os.system('clear')
         for index in menu_index.keys():
             print('\n{} - {}'.format(index,menu_index[index]).replace('(','').replace(')','').replace(', ','    -    ').replace('\'','').replace('\"',''))
         choice = input('Veuiller selectionner le produit à substitué\n')
@@ -163,6 +164,26 @@ def choose_sub(mydb,category,product_ean):
     ean = [a for a in cursor]
     return ean[0][0]
 
+def insert_into_mysubstituts(mydb, product_ean, sub_ean):
+    cursor = mydb.cursor()
+    query = 'insert into mysubstituts (EAN,Origin) values (' + str(sub_ean) + ', ' + str(product_ean) + ');'
+    try:
+        cursor.execute(query)
+    except mysql.connector.Error as err:
+        print("Something went wrong: {}".format(err))
+    mydb.commit()
+
+def print_product_from_EAN(mydb,EAN):
+    cursor = mydb.cursor()
+    query = 'select EAN,Name,URL from off where EAN=' + str(EAN) + ';'
+    try:
+        cursor.execute(query)
+        product = [str(a) for a in cursor]
+        print(str(product).replace('[\"(', '').replace(')\"]', '').replace('\'', '').replace('\"', '').replace(',', '  -  '))
+    except mysql.connector.Error as err:
+        print("Something went wrong: {}".format(err))
+    mydb.commit()
+
 def main():
     mydb = init_database()
     products = list_of_products()
@@ -173,7 +194,11 @@ def main():
     insert_products_into_off(mydb,products)
     product_ean = choose_product(mydb,category)
     sub_ean = choose_sub(mydb,category,product_ean)
-    print(product_ean)
-    print(sub_ean)
+    insert_into_mysubstituts(mydb, product_ean, sub_ean)
+    print('\nVous avez choisi de trouver un substitut pour le produit:\n')
+    print_product_from_EAN(mydb,product_ean)
+    print('\nNous vous proposons le produit:\n')
+    print_product_from_EAN(mydb,sub_ean)
+    print('\n')
 if __name__ == '__main__':
     main()
