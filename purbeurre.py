@@ -184,21 +184,63 @@ def print_product_from_EAN(mydb,EAN):
         print("Something went wrong: {}".format(err))
     mydb.commit()
 
+def substituts_list(mydb):
+    cursor = mydb.cursor()
+    choice = 0
+    query = 'select off.EAN,Name,URL from off inner join mysubstituts on off.EAN = mysubstituts.EAN;'
+    cursor.execute(query)
+    eans = [a for a in cursor]
+    index = range(1,len(eans)+1)
+    index = [str(a) for a in index]
+    menu_index = dict(zip(index,eans))
+    while choice not in menu_index.keys():
+        os.system('clear')
+        for index in menu_index.keys():
+            print('\n{} - {}'.format(index,menu_index[index]).replace('(','').replace(')','').replace(', ','    -    ').replace('\'','').replace('\"',''))
+        choice = input('Veuiller selectionner le produit à substitué\n')
+    return menu_index[choice][0]
+
+def get_ean_of_origin(mydb, sub_ean):
+    cursor = mydb.cursor()
+    query = 'select Origin from mysubstituts where EAN=' + str(sub_ean) + ';'
+    cursor.execute(query)
+    ean = [a for a in cursor]
+    return ean[0][0]
+
+def choose_end():
+    choice = 0
+    while choice not in ('n','y'):
+        choice = input('Souhaiter vous retourner au menu principal? (y/n):\n')
+    return choice
+
 def main():
     mydb = init_database()
     products = list_of_products()
     dbcursor = mydb.cursor()
-    choice = choose_action()
-    category = choose_category(dbcursor)
-    get_all_pages(dbcursor,category,products)
-    insert_products_into_off(mydb,products)
-    product_ean = choose_product(mydb,category)
-    sub_ean = choose_sub(mydb,category,product_ean)
-    insert_into_mysubstituts(mydb, product_ean, sub_ean)
-    print('\nVous avez choisi de trouver un substitut pour le produit:\n')
-    print_product_from_EAN(mydb,product_ean)
-    print('\nNous vous proposons le produit:\n')
-    print_product_from_EAN(mydb,sub_ean)
-    print('\n')
+    while 1:
+        action = choose_action()
+        if action == '1' :
+            category = choose_category(dbcursor)
+            get_all_pages(dbcursor,category,products)
+            insert_products_into_off(mydb,products)
+            #products.reset_list()
+            product_ean = choose_product(mydb,category)
+            sub_ean = choose_sub(mydb,category,product_ean)
+            insert_into_mysubstituts(mydb, product_ean, sub_ean)
+            print('\nVous avez choisi de trouver un substitut pour le produit:\n')
+            print_product_from_EAN(mydb,product_ean)
+            print('\nNous vous proposons le produit:\n')
+            print_product_from_EAN(mydb,sub_ean)
+            print('\n')
+        elif action == '2':
+            sub_ean = substituts_list(mydb)
+            product_ean = get_ean_of_origin(mydb,sub_ean)
+            print('\nVous aviez choisi de trouver un substitut pour le produit:\n')
+            print_product_from_EAN(mydb,product_ean)
+            print('\nNous vous avions proposer le produit:\n')
+            print_product_from_EAN(mydb,sub_ean)
+            print('\n')
+        if choose_end() == 'n':
+            break;
 if __name__ == '__main__':
     main()
