@@ -104,7 +104,7 @@ class controller():
     def insert_into_mysubstituts(self, product_ean, sub_ean):
         #Function that insert the substituted's eanand the substitut's ean
         #into the mysubstituts table
-        query = 'insert into mysubstituts (EAN,Origin) values (' + str(sub_ean) \
+        query = 'insert into mysubstituts (EAN,Origin) values (' + str(sub_ean)\
         + ', ' + str(product_ean) + ');'
         try:
             self.db.curs.execute(query)

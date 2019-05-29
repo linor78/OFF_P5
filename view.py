@@ -38,8 +38,8 @@ class view():
         #chosen category until one valid product is chosen
         choice = 0
         index = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        query = 'select EAN,Name,URL,Grade,Category from off where Category=' + str(category) \
-        + ' order by rand() limit 10;'
+        query = 'select EAN,Name,URL,Grade,Category from off where Category='\
+         + str(category) + ' order by rand() limit 10;'
         eans = self.s.prod_10_rand(query)
         menu_index = dict(zip(index, eans))
         while choice not in menu_index.keys():
@@ -70,7 +70,8 @@ class view():
         #Function that ask the user if he want to quit or go back to main menu
         choice = 0
         while choice not in ('n','y'):
-            choice = input('Souhaiter vous retourner au menu principal? (y/n):\n')
+            choice = input('Souhaiter vous retourner \
+            au menu principal? (y/n):\n')
         return choice
 
     def print_new_sub(self, EAN, sub_EAN):

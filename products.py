@@ -10,8 +10,6 @@ class list_of_products():
         s=', '
         return s.join((str(p) for p in self.products)).\
         replace('[','(').replace(']',')')
-    def get_len(self):
-        return len(self.products)
     def reset_list(self):
         self.products[:] = []
 

@@ -103,16 +103,16 @@ class select():
         #Function that return one substitut that isnt the selected product, from
         #the same category and with equal or better nutrition_grade_fr
         query = 'select EAN from off where (EAN!=' + str(product_ean) + ' and \
-        Category=' + str(category) + ' and Grade<=(select Grade from off where EAN \
-        =' + str(product_ean) + ')) order by rand() limit 1;'
+        Category=' + str(category) + ' and Grade<=(select Grade from off \
+         where EAN=' + str(product_ean) + ')) order by rand() limit 1;'
         self.curs.execute(query)
         sub = [a for a in self.curs]
         return sub[0][0]
 
     def get_sub_list(self):
         #Function that return the list of all the previously saved substituts
-        self.curs.execute('select off.EAN,Name,URL,Grade,Category from off inner \
-        join mysubstituts on off.EAN = mysubstituts.EAN;')
+        self.curs.execute('select off.EAN,Name,URL,Grade,Category from \
+        off inner join mysubstituts on off.EAN = mysubstituts.EAN;')
         eans = [a for a in self.curs]
         return eans
 
@@ -122,11 +122,12 @@ class select():
         from off where EAN=' + str(ean) + ';')
         product = [str(a) for a in self.curs]
         return product
-        
+
     def get_ean_of_origin(self, sub_ean):
         #Function that return the substituted product's ean from
         #the substitut's ean
-        query = 'select Origin from mysubstituts where EAN=' + str(sub_ean) + ';'
+        query = 'select Origin from mysubstituts where EAN=' +\
+         str(sub_ean) + ';'
         self.curs.execute(query)
         ean = [a for a in self.curs]
         return ean[0][0]
