@@ -26,3 +26,5 @@ The program need a function 'insert_into_mysubstituts(mydb, product_ean, sub_ean
 The program need a function 'print_product_from_EAN(mydb,EAN)' that will print the information of the product in the console.
 
 the program need a View() class that will handle the printing of characters in the console and control the inputs of the user.
+
+the program need a select() class that will search the db from parameters such as tables name, where conditions,columns to select etc.
