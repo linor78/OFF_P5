@@ -5,9 +5,9 @@ import mysql.connector
 from mysql.connector import errorcode
 import db
 import view
-import os
 import time
 import requests
+import products as p
 COLUMNS = {'EAN': 'code', 'Name': 'product_name', 'Stores' : 'stores', 'URL':\
  'url', 'Grade': 'nutrition_grade_fr'}
 S1_URL = 'https://fr.openfoodfacts.org/cgi/search.pl?&tagtype_0=languages&tag_c\
@@ -15,154 +15,110 @@ ontains_0=contains&tag_0=fr&tagtype_1=categories&tag_contains_1=contains&tag_1='
 S2_URL = "&search_simple=1&action=process&page_size=1000&json=1&page="
 INS_COLUMNS = ('Ean', 'Name', 'Stores', 'URL', 'Grade', 'Category')
 
-class list_of_products():
-    def __init__(self):
-        self.products = list()
-    def add_product(self,tuple_of_values):
-        self.products.append(tuple_of_values)
-    def get_all_products(self):
-        s=', '
-        return s.join((str(p) for p in self.products)).\
-        replace('[','(').replace(']',')')
-    def get_len(self):
-        return len(self.products)
-    def reset_list(self):
-        self.products[:] = []
+class controller():
+    def __init__(self, v, s, mydb, products):
+        #Initialisation of the class by getting all the classes needed for the
+        #program
+        self.v = v
+        self.s = s
+        self.db = mydb
+        self.products = products
 
-def choose_action(v):
-    choice = 0
-    while choice != '1' and choice != '2' :
-        choice = v.print_action()
-    return choice
-def choose_category(v, s):
-    category = 0
-    categories = s.cat_dict_id_name()
-    while category not in categories.keys():
-        category = v.print_category(categories)
-    return int(category)
+    def main_menu_loop(self):
+        #Main menu loop that will bring back the user to teh beginning until
+        #he decide to leave
+        while 1:
+            action = self.v.choose_action()
+            if action == '1' : #The user chose to find a substitut
+                category = self.v.choose_category()
+                self.get_all_pages(category)
+                self.insert_products_into_off()
+                self.products.reset_list()
+                product_ean = self.v.choose_product(category)
+                sub_ean = self.s.get_sub(category, product_ean)
+                self.insert_into_mysubstituts(product_ean, sub_ean)
+                self.v.print_new_sub(product_ean, sub_ean)
+            elif action == '2': #The user chose to look at substitut's list
+                sub_ean = self.v.substituts_list()
+                if not sub_ean:
+                    print('No substituts saved so far\n')
+                    time.sleep(3)
+                    continue
+                product_ean = self.s.get_ean_of_origin(sub_ean)
+                self.v.print_old_sub(product_ean, sub_ean)
+            if self.v.choose_end() == 'n':
+                break;
 
-def return_values(category,jsond):
-
-    values = list()
-    value = None
-    for key in COLUMNS.keys():
-        try:
-            value = jsond[COLUMNS[key]]
-            if key == 'EAN':
-                value = int(value)
-                values.append(value)
-            else :
-                values.append(value)
-        except:
-            pass
-    values.append(category)
-    return values
-
-def get_all_pages(category,list_of_products,s):
-    i = 1
-    cat_name = s.cat_name_from_id(category)
-    while True:
-        url = S1_URL + cat_name + S2_URL + str(i)
-        print(url)
-        r = requests.get(url)
-        jsond = r.json()
-        jsond = jsond['products']
-        if  not jsond:
-            break
-        for product in jsond:
+    def return_values(self, category, jsond):
+        #Function that return the list of all the values we want to save in our
+        #database for every product from its json object
+        values = list()
+        value = None
+        for key in COLUMNS.keys():
             try:
-                if product['stores'] and product['nutrition_grade_fr']:
-                    list_of_products.add_product \
-                    (return_values(category,product))
+                value = jsond[COLUMNS[key]]
+                if key == 'EAN':
+                    value = int(value)
+                    values.append(value)
+                else :
+                    values.append(value)
             except:
                 pass
-        i += 1
+        values.append(category)
+        return values
 
-def insert_products_into_off(db,products):
-    s= ', '
-    query = 'INSERT IGNORE into off ({}) VALUES {} ;' \
-    .format(s.join(INS_COLUMNS), products.get_all_products())
-    try:
-        db.curs.execute(query)
-    except mysql.connector.Error as err:
-        print("Something went wrong: {}".format(err))
-    db.con.commit()
+    def get_all_pages(self, category):
+        #Funtion that will ask the api for every page of the chosen category
+        #and add the values of each product inside the products list
+        i = 1
+        cat_name = self.s.cat_name_from_id(category)
+        while True:
+            url = S1_URL + cat_name + S2_URL + str(i)
+            print(url)
+            r = requests.get(url)
+            jsond = r.json()
+            jsond = jsond['products']
+            if  not jsond:
+                break
+            for product in jsond:
+                try:
+                    if product['stores'] and product['nutrition_grade_fr']:
+                        self.products.add_product \
+                        (self.return_values(category,product))
+                except:
+                    pass
+            i += 1
 
-def choose_product(category, s, v):
-    choice = 0
-    index = ['1','2','3','4','5','6','7','8','9','10']
-    query = 'select EAN,Name,URL,Grade,Category from off where Category=' + str(category) \
-    + ' order by rand() limit 10;'
-    eans = s.prod_10_rand(query)
-    menu_index = dict(zip(index,eans))
-    while choice not in menu_index.keys():
-        choice = v.print_10_product(menu_index)
-    return menu_index[choice][0]
+    def insert_products_into_off(self):
+        #Function that insert the products into the off table
+        s= ', '
+        query = 'INSERT IGNORE into off ({}) VALUES {} ;' \
+        .format(s.join(INS_COLUMNS), self.products.get_all_products())
+        time.sleep(2)
+        try:
+            self.db.curs.execute(query)
+        except mysql.connector.Error as err:
+            print("Something went wrong: {}".format(err))
+        self.db.con.commit()
 
-def choose_sub(category,product_ean,s):
-    query = 'select EAN from off where (EAN!=' + str(product_ean) + ' and \
-    Category=' + str(category) + ' and Grade<=(select Grade from off where EAN \
-    =' + str(product_ean) + ')) order by rand() limit 1;'
-    ean = s.get_sub(query)
-    return ean
-
-def insert_into_mysubstituts(db, product_ean, sub_ean):
-    query = 'insert into mysubstituts (EAN,Origin) values (' + str(sub_ean) \
-    + ', ' + str(product_ean) + ');'
-    try:
-        db.curs.execute(query)
-    except mysql.connector.Error as err:
-        print("Something went wrong: {}".format(err))
-    db.con.commit()
-
-def substituts_list(s, v):
-    choice = 0
-    eans = s.get_sub_list()
-    if not eans:
-        return None
-    index = range(1,len(eans)+1)
-    index = [str(a) for a in index]
-    menu_index = dict(zip(index,eans))
-    while choice not in menu_index.keys():
-        choice = v.print_sub_list(menu_index)
-    return menu_index[choice][0]
-
-def get_ean_of_origin(db, sub_ean, s):
-    query = 'select Origin from mysubstituts where EAN=' + str(sub_ean) + ';'
-    ean = s.get_ean_of_origin(query)
-    return ean[0][0]
-
-def choose_end():
-    choice = 0
-    while choice not in ('n','y'):
-        choice = input('Souhaiter vous retourner au menu principal? (y/n):\n')
-    return choice
+    def insert_into_mysubstituts(self, product_ean, sub_ean):
+        #Function that insert the substituted's eanand the substitut's ean
+        #into the mysubstituts table
+        query = 'insert into mysubstituts (EAN,Origin) values (' + str(sub_ean) \
+        + ', ' + str(product_ean) + ');'
+        try:
+            self.db.curs.execute(query)
+        except mysql.connector.Error as err:
+            print("Something went wrong: {}".format(err))
+        self.db.con.commit()
 
 def main():
     mydb = db.init_db()
     s = db.select(mydb.curs)
-    products = list_of_products()
+    products = p.list_of_products()
     v = view.view(s)
-    while 1:
-        action = choose_action(v)
-        if action == '1' :
-            category = choose_category(v, s)
-            get_all_pages(category,products,s)
-            insert_products_into_off(mydb,products)
-            products.reset_list()
-            product_ean = choose_product(category, s, v)
-            sub_ean = choose_sub(category,product_ean,s)
-            insert_into_mysubstituts(mydb, product_ean, sub_ean)
-            v.print_new_sub(product_ean, sub_ean)
-        elif action == '2':
-            sub_ean = substituts_list(s, v)
-            if not sub_ean:
-                print('No substituts saved so far\n')
-                time.sleep(3)
-                continue
-            product_ean = get_ean_of_origin(mydb, sub_ean, s)
-            v.print_old_sub(product_ean, sub_ean)
-        if choose_end() == 'n':
-            break;
+    c = controller(v, s, mydb, products)
+    c.main_menu_loop()
+
 if __name__ == '__main__':
     main()
