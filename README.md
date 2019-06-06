@@ -1,6 +1,13 @@
 # OOF_P5
 Program that will give the user a subsitute to the selected food using OpenFoodFacts's API.
 
+A file named private.py containing the mysql database user info is needed:
+
+passwd='pass'
+user='user'
+host='localhost'
+dbname='purbeurre'
+
 **Functions of the program:**
 
 The program need a class 'init_database()' that will connect to the mysql database and check if the three tables we will use in the program already exists.If the tables don't exist, it will create them. This function need the login,adress and database name of the mysql database, they will be set as constants of the program in a separate file named private.py to avoid leaking of the password on github, this file should be added to .gitignore, this class also contain an erase function that will erase the 3 tables from the database,this class will be in a separate python file, if the file is launched, he will erase the tables and quit.
