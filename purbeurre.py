@@ -94,7 +94,6 @@ class controller():
         query = 'INSERT IGNORE into off ({}) VALUES {} ;'
         query = query.format(s.join(INS_COLUMNS),
                              self.products.get_all_products())
-        time.sleep(2)
         try:
             self.db.curs.execute(query)
         except mysql.connector.Error as err:
