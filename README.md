@@ -4,9 +4,13 @@ Program that will give the user a subsitute to the selected food using OpenFoodF
 A file named private.py containing the mysql database user info is needed:
 
 passwd='pass'
+
 user='user'
+
 host='localhost'
+
 dbname='purbeurre'
+
 
 **Functions of the program:**
 
